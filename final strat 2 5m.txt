@@ -285,7 +285,7 @@ f_dateFilter = time >= i_startTime and time <= i_endTime
 var float buyPrice = 0
 long = ema55 < ema21 and bbwp < 35 and ta.crossunder(pmarp, 25) and strategy.position_size == 0 and f_dateFilter
 tP = ta.crossover(pmarp, 80) and strategy.position_size > 0
-stopDistance = strategy.position_size > 0 ? ((buyPrice - close) / close) : na
+stopDistance = strategy.position_size > 0 ? ((buyPrice - close) / buyPrice) : na
 stopLoss = strategy.position_size > 0 ? buyPrice - (buyPrice * i_stopPercent) : na
 stopCondition = strategy.position_size > 0 and stopDistance > i_stopPercent
 
