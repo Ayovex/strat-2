@@ -289,6 +289,7 @@ stopDistance = strategy.position_size > 0 ? ((buyPrice - close) / buyPrice) : na
 stopLoss = strategy.position_size > 0 ? buyPrice - (buyPrice * i_stopPercent) : na
 stopCondition = strategy.position_size > 0 and stopDistance > i_stopPercent
 
+
 // entries
 if long 
     strategy.entry(id="Long", direction=strategy.long)
@@ -301,9 +302,21 @@ if tP or stopCondition
     strategy.close(id="Long", comment="Exit" + (stopCondition ? "SL=true" : ""))
     buyPrice := na 
 
+// alerts
+var string buyMessage = '{ "content" : "ENTER long position: '+ syminfo.basecurrency +' = $'+ str.tostring(close)+'"}'
+var string sellMessage = '{ "content" : "EXIT long position: '+ syminfo.basecurrency +' = $'+ str.tostring(close)+'"}'
+var string stopMessage = '{ "content" : "STOP LOSS HIT: '+ syminfo.basecurrency +' = $'+ str.tostring(close)+'"}'
+
+if long
+    alert(buyMessage, alert.freq_once_per_bar_close)
+
+if tP
+    alert(sellMessage, alert.freq_once_per_bar_close)
+
+if stopCondition
+    alert(stopMessage, alert.freq_once_per_bar_close)
+
+//plot
 plot(buyPrice, color=color.green, style=plot.style_linebr)
 plot(stopLoss, color=color.red, style=plot.style_linebr, offset=-1)
-
-
-alert("Strat 2 (30m)")
 
