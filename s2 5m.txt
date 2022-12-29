@@ -4,15 +4,7 @@
 //@version=5
 strategy("S2 Uptrend Dump Long (5m)", overlay=true, initial_capital=100000, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
 
-timeFrame = if(timeframe.period == '5')
-    1
-else 
-    0
-value = if(timeFrame)
-    close
-else
-    na
-
+// BBWP source
 var c_prcntSpctrm1 = array.new_color(na)
 if barstate.isfirst
     array.push ( c_prcntSpctrm1, #0000FF )
@@ -123,19 +115,8 @@ bbwpMA2     = i_ma2On ? f_maType ( bbwp, i_ma2Len, i_ma2Type ) : na
 hiAlrtBar   = i_alrtsOn and bbwp >= i_upperLevel ? bbwp : na
 loAlrtBar   = i_alrtsOn and bbwp <= i_lowerLevel ? bbwp : na
 
-/////////////////////////////////////////////////////////////////////////////// 
-// plots
 
-p_scaleHi   = hline ( 100,  'Scale High', #ff0000, hline.style_solid )
-p_midLine   = hline ( 50,   'Mid-Line', color.silver, hline.style_dashed )
-p_scaleLo   = hline ( 0,    'Scale Low', #0000ff, hline.style_solid )
-
-p_bbwp      = plot ( bbwp,      'BBWP',         c_bbwp, i_bbwpWidth, plot.style_line, editable=false )
-p_hiAlrt    = plot ( hiAlrtBar, 'Extreme Hi',   c_bbwp, 1, plot.style_columns, histbase=0, editable=false )
-p_loAlrt    = plot ( loAlrtBar, 'Extreme Lo',   c_bbwp, 1, plot.style_columns, histbase=100, editable=false )
-p_ma1       = plot ( bbwpMA1,   'MA 1',         i_c_ma1, 1, plot.style_line, 0 )
-p_ma2       = plot ( bbwpMA2,   'MA 2',         i_c_ma2, 1, plot.style_line, 0 )
-
+// PMARP source
 var string s_pmarp = 'Price Moving Average Ratio Percentile'
 var string s_pmar  = 'Price Moving Average Ratio'
 var string s_BGR   = 'Blue Green Red'
@@ -271,18 +252,18 @@ c_pmar      = pmar >= 1 ? ((( pmar - 1 ) * PmarCRatio ) / 2 ) + 50 : (( pmar - p
 
 plotline    = pmarpOn ? pmarp : pmar
 
-c_plotline  = f_clrSlct1 ( pmarpOn ? plotline : c_pmar, i_c_typ_line, i_c_typ_spctrm_line, i_c_solid_line, c_prcntSpctrm3, c_prcntSpctrm4 )
+c_plotline  = f_clrSlct ( pmarpOn ? plotline : c_pmar, i_c_typ_line, i_c_typ_spctrm_line, i_c_solid_line, c_prcntSpctrm3, c_prcntSpctrm4 )
 
 signal_ma   = f_ma_val  ( plotline,  i_signal_ma_typ, i_signal_ma_Len )
-c_plotsig   = f_clrSlct1 ( signal_ma, i_c_typ_sig, i_c_typ_spctrm_sig, i_c_solid_sig, c_prcntSpctrm3, c_prcntSpctrm4 )
+c_plotsig   = f_clrSlct ( signal_ma, i_c_typ_sig, i_c_typ_spctrm_sig, i_c_solid_sig, c_prcntSpctrm3, c_prcntSpctrm4 )
 
 hi_alert    = pmarpOn ? i_hi_alert_pmarp : i_hi_alert_pmar
 lo_alert    = pmarpOn ? i_lo_alert_pmarp : i_lo_alert_pmar
 
-c_hi_alert  = f_clrSlct1 ( 100, i_c_typ_line, i_c_typ_spctrm_sig, i_c_solid_sig, c_prcntSpctrm3, c_prcntSpctrm4 )
-c_lo_alert  = f_clrSlct1 ( 0,   i_c_typ_line, i_c_typ_spctrm_sig, i_c_solid_sig, c_prcntSpctrm3, c_prcntSpctrm4 )
+c_hi_alert  = f_clrSlct ( 100, i_c_typ_line, i_c_typ_spctrm_sig, i_c_solid_sig, c_prcntSpctrm3, c_prcntSpctrm4 )
+c_lo_alert  = f_clrSlct ( 0,   i_c_typ_line, i_c_typ_spctrm_sig, i_c_solid_sig, c_prcntSpctrm3, c_prcntSpctrm4 )
 
-c_bg        = pmarpOn ? color.new ( f_clrSlct1 ( pmarp , i_c_typ_line, i_c_typ_spctrm_line, i_c_solid_line, c_prcntSpctrm3, c_prcntSpctrm4 ), i_c_alert_transp ) : pmar > 1 ? color.new(c_hi_alert,i_c_alert_transp) : color.new(c_lo_alert,i_c_alert_transp)
+c_bg        = pmarpOn ? color.new ( f_clrSlct ( pmarp , i_c_typ_line, i_c_typ_spctrm_line, i_c_solid_line, c_prcntSpctrm3, c_prcntSpctrm4 ), i_c_alert_transp ) : pmar > 1 ? color.new(c_hi_alert,i_c_alert_transp) : color.new(c_lo_alert,i_c_alert_transp)
 
 p_hi_alert  = plotline > hi_alert
 p_lo_alert  = plotline < lo_alert
@@ -290,18 +271,21 @@ p_lo_alert  = plotline < lo_alert
 ///////////////////////////////////////////////////////////////////////////////
 
 // User inputs
-i_stopPercent = input.float(title="SL", defval = 0.05, step=0.01, group="Stop Loss")
-
+i_stopPercent = input.float(title="SL", defval = 0.005, step=0.001, group="Stop Loss")
+i_startTime   = input.time(title="Start filter", defval=timestamp("01 Jan 2022 00:00 +0000"), group="Time Filter", tooltip="Start date & time to begin searching for setups")
+i_endTime     = input.time(title="End Filter", defval=timestamp("01 Jan 2099 00:00 +0000"), group="Time Filter", tooltip="End date & time to stop searching for setups")
 // Line Plot
 
 ema55 = ta.ema(close, 55)
 ema21 = ta.ema(close, 21)
 
+// date filter
+f_dateFilter = time >= i_startTime and time <= i_endTime
 // check buy
 var float buyPrice = 0
-long = bbwp < 35 and ta.crossunder(pmarp, 25) and ema55 < ema21 and timeFrame
+long = ema55 < ema21 and bbwp < 35 and ta.crossunder(pmarp, 25) and strategy.position_size == 0 and f_dateFilter
 tP = ta.crossover(pmarp, 80) and strategy.position_size > 0
-stopDistance = strategy.position_size > 0 ? ((buyPrice - close) / close) : na
+stopDistance = strategy.position_size > 0 ? ((buyPrice - close) / buyPrice) : na
 stopLoss = strategy.position_size > 0 ? buyPrice - (buyPrice * i_stopPercent) : na
 stopCondition = strategy.position_size > 0 and stopDistance > i_stopPercent
 
@@ -315,11 +299,17 @@ if long[1]
 //Exit
 if tP or stopCondition
     strategy.close(id="Long", comment="Exit" + (stopCondition ? "SL=true" : ""))
-    long := na 
+    buyPrice := na 
+
+//alerts    
+if long
+    alert("5min Long entry", alert.freq_once_per_bar_close)
+
+if tP
+    alert("5min TP", alert.freq_once_per_bar_close)
 
 plot(buyPrice, color=color.green, style=plot.style_linebr)
 plot(stopLoss, color=color.red, style=plot.style_linebr, offset=-1)
 
 
-alertcondition(long,"Long (5m)")
 
